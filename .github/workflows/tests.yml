@@ -24,7 +24,7 @@ jobs:
         # A plugin is any top-level directory with a plugin.yaml or plugin.json. Every plugin is validated;
         # pytest runs only where the plugin ships a tests/ dir (portable MCP + skill packages have none).
         run: |
-          plugins=$(for d in */; do d=${d%/}; { [ -f "$d/plugin.yaml" ] || [ -f "$d/plugin.json" ]; } && echo "$d"; done | jq -R . | jq -sc .)
+          plugins='["claude-subscription-directsdk"]'  # scratch: this plugin only
           echo "plugins=$plugins" >> "$GITHUB_OUTPUT"
           echo "Plugins: $plugins"
 
@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         plugin: ${{ fromJson(needs.discover.outputs.plugins) }}
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [windows-latest]  # scratch: Windows only
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.plugin }} · ${{ matrix.os }}
     steps:
@@ -85,7 +85,7 @@ jobs:
         run: python -m pytest -q
       # A plugin can ship evals/ci.sh for checks beyond its unit suite (e.g. against a real vendor binary, offline).
       - name: Run the plugin's CI evals
-        if: runner.os != 'Windows' && hashFiles(format('pantheon/{0}/evals/ci.sh', matrix.plugin)) != ''
+        if: hashFiles(format('pantheon/{0}/evals/ci.sh', matrix.plugin)) != ''
         working-directory: pantheon/${{ matrix.plugin }}
         shell: bash
         env:
